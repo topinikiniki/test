@@ -1,0 +1,6 @@
+{
+  "name": "Rhythm Game",
+  "description": "A fully procedural, neon-styled multi-lane rhythm game with custom Web Audio synthetic tracks, adjustable note speeds, live combo counters, and high score tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
