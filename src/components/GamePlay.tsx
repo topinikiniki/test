@@ -99,6 +99,38 @@ export default function GamePlay({
   const trackHeight = 500; //px height of the falling track
   const triggerBarY = 440; //px placement of judgement bar
 
+  // Sync state/props with refs to prevent stale closure in animation loops
+  const loadingRef = useRef(true);
+  const isPausedRef = useRef(false);
+  const songInfoRef = useRef<Song | null>(null);
+  const noteSpeedRef = useRef(noteSpeed);
+  const soundVolumeRef = useRef(soundVolume);
+  const offsetMsRef = useRef(offsetMs);
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    songInfoRef.current = songInfo;
+  }, [songInfo]);
+
+  useEffect(() => {
+    noteSpeedRef.current = noteSpeed;
+  }, [noteSpeed]);
+
+  useEffect(() => {
+    soundVolumeRef.current = soundVolume;
+  }, [soundVolume]);
+
+  useEffect(() => {
+    offsetMsRef.current = offsetMs;
+  }, [offsetMs]);
+
   // Safe Audio context and gain node constructor
   function initAudio() {
     try {
@@ -204,14 +236,14 @@ export default function GamePlay({
 
   // Get current play offset position in seconds (with latencies calibration shift)
   function getCurrentMusicTime(): number {
-    if (loading || isPaused) {
-      return pausedAtRef.current - (offsetMs / 1000);
+    if (loadingRef.current || isPausedRef.current) {
+      return pausedAtRef.current - (offsetMsRef.current / 1000);
     }
     // High performance elapsed seconds
     const elapsedMs = performance.now() - playStartTimeRef.current;
     const elapsedSec = elapsedMs / 1000;
     const songTime = songTimeAtStartRef.current + elapsedSec;
-    return songTime - (offsetMs / 1000);
+    return songTime - (offsetMsRef.current / 1000);
   }
 
   // Draw board artifacts and falling elements directly onto high performance canvas
@@ -322,7 +354,7 @@ export default function GamePlay({
         continue;
       }
 
-      const speedMultiplier = 140 * noteSpeed;
+      const speedMultiplier = 140 * noteSpeedRef.current;
       const visualY = (triggerY - (noteHeight / 2)) - (relativeTime * speedMultiplier);
       const visualX = (note.lane * laneWidth) + noteMarginX;
 
@@ -366,7 +398,7 @@ export default function GamePlay({
     // Schedule next frame immediately so the loop never dies
     animationFrameId.current = requestAnimationFrame(gameLoop);
 
-    if (isPaused || loading || !songInfo) {
+    if (isPausedRef.current || loadingRef.current || !songInfoRef.current) {
       drawCanvas();
       return;
     }
@@ -394,7 +426,7 @@ export default function GamePlay({
     }
 
     // Song progress bar estimation
-    const dur = audioBufferRef.current?.duration || songInfo.duration;
+    const dur = audioBufferRef.current?.duration || (songInfoRef.current ? songInfoRef.current.duration : 0);
     const progressPercent = Math.min(100, (curTime / dur) * 100);
     
     frameCountRef.current += 1;
